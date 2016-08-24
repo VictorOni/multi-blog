@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+<h1>hi there</h1>
+{% block content %}
+  {{post.render() | safe}}
+  <br><br>
+  <a href='/blog'>Return to Homepage</a>
+{% endblock %}
+
+<h1>hi there</h1>

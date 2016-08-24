@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+  {% for p in posts %}
+  <br><br>
+    <a href='blog/edit/{{p.key().id()}}'>Edit</a>
+   <form action='blog/delete/{{p.key().id()}}' method='POST'>
+    
+    <input type="submit" value="delete">
+   </form>
+  
+    {{ p.render() | safe }}
+    <br><br>
+	 
+  {% endfor %}
+<a href='blog/newpost'>New Post</a>
+{% endblock %}
