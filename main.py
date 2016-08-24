@@ -329,11 +329,13 @@ class Welcome(BlogHandler):
 class Delete(BlogHandler):
     
     def post(self,post_id):  
-       key = db.Key.from_path('Post', int(post_id), parent=blog_key())
-       post = db.get(key)
-       db.delete(key)
-       if self.user:
-          self.redirect('/blog')
+      if self.user:
+        key = db.Key.from_path('Post', int(post_id), parent=blog_key())
+        post = db.get(key)
+        db.delete(key)
+        self.redirect('/blog')
+      else:
+        self.redirect('/blog')
 
 
     
