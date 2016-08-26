@@ -126,19 +126,24 @@ class Post(db.Model):
     content = db.TextProperty(required=True)
     created = db.DateTimeProperty(auto_now_add = True)
     last_modified = db.DateTimeProperty(auto_now = True)
+    user = db.ReferenceProperty(User)
+
 
     def render(self):
         self._render_text = self.content.replace('\n', '<br>')
         return render_str("post.html", p = self)
+    @property
+    def comments(self):
+        return Comment.all().filter("post = ", str(self.key().id()))
+   
+   
 
 class BlogFront(BlogHandler):
     def get(self):
         posts = greetings = Post.all().order('-created')
         self.render('front.html', posts = posts)
         
-
-
-
+        
 
 class NewPost(BlogHandler):
     def get(self):
@@ -155,7 +160,7 @@ class NewPost(BlogHandler):
         content = self.request.get('content')
 
         if subject and content:
-            p = Post(parent = blog_key(), subject = subject, content = content)
+            p = Post(parent = blog_key(), subject = subject, content = content,user = self.user.key())
             p.put()
             self.redirect('/blog/%s' % str(p.key().id()))
         else:
@@ -328,14 +333,68 @@ class Welcome(BlogHandler):
 
 class Delete(BlogHandler):
     
-    def post(self,post_id):  
-      if self.user:
-        key = db.Key.from_path('Post', int(post_id), parent=blog_key())
+    def post(self,post_id):
+         if self.user:
+          key = db.Key.from_path('Post', int(post_id), parent=blog_key())
+          post = db.get(key)
+          db.delete(key)
+          self.redirect('/blog')
+
+         else:
+             self.redirect('/blog')
+
+class Comment(db.Model):
+    comment = db.StringProperty(required=True)
+    post = db.ReferenceProperty(Post)
+    user = db.ReferenceProperty(User)
+
+
+class NewComment(BlogHandler):
+
+    def get(self,post_id):
+
+        if not self.user:
+            return self.redirect("/login")
+        key = db.Key.from_path("Post", int(post_id), parent=blog_key())
         post = db.get(key)
-        db.delete(key)
-        self.redirect('/blog')
-      else:
-        self.redirect('/blog')
+        
+        subject = post.subject
+        content = post.content
+        self.render(
+            "newcomment.html",
+            subject=subject,
+            content=content,
+            post=post.key(),
+            user=self.user.key(),
+            )
+
+    def post(self,post_id):
+        if self.user:
+            key = db.Key.from_path("Post", int(post_id), parent=blog_key())
+            post = db.get(key)
+            if not post:
+                self.error(404)
+                return
+            if not self.user:
+                return self.redirect("login")
+            comment = self.request.get("comment")
+
+            if comment:
+                # check how author was defined
+            
+                c = Comment(comment=comment,user = self.user.key(),post=post.key())
+                c.put()
+                self.redirect("/blog/%s" % str(post.key().id()))
+
+            else:
+                error = "please comment"
+                self.render(
+                    "permalink.html",
+                    post=post,
+                    content=content,
+                    error=error)
+        else:
+            self.redirect("/login")
 
 
     
@@ -351,8 +410,8 @@ app = webapp2.WSGIApplication([('/', MainPage),
                                ('/login', Login),
                                ('/logout', Logout),
                                ('/unit3/welcome', Unit3Welcome),
-                            
                                ('/blog/delete/([0-9]+)',Delete),
+                               ("/blog/newcomment/([0-9]+)", NewComment),
                                
                                ],
                               debug=True)
