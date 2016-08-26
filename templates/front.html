@@ -14,6 +14,19 @@
   
     {{ p.render() | safe }}
     <br><br>
+	<div class="post-comments">
+			<h3 class="comment-title">Comments</h3>
+
+			{% for c in p.comments %}
+
+			<div class="comments">
+				<p class="comment-content">{{c.comment}}</p>
+				
+			</div>
+			{% endfor %}
+
+			<a href="/blog/newcomment/{{p.key().id()}}" >add new comment</a>
+
 	
   {% endfor %}
 <a href='blog/newpost'>New Post</a>
